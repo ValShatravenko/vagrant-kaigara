@@ -5,9 +5,9 @@ module VagrantPlugins
 
       description "Provision VM with Kaigara."
 
-      command :kaigara do
-        require_relative 'command'
-        Command
+      provisioner :kaigara do
+        require_relative 'provisioner'
+        Provisioner
       end
 
     end
