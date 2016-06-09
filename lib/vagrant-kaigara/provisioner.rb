@@ -3,17 +3,19 @@ module VagrantPlugins
     class Provisioner < Vagrant.plugin(2, :provisioner)
       def provision
         puts "Installing RVM..."
-        script = %{sudo apt-get install curl
-curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-curl -sSL https://get.rvm.io | bash -s stable --ruby
-echo "source $HOME/.rvm/scripts/rvm" | sudo tee /etc/profile.d/rvm.sh
-. /etc/profile && rvm rvmrc warning ignore allGemfiles
-. /etc/profile && . $HOME/.rvm/scripts/rvm && rvm use --default --install 2.3.0}
+        script = %{apt-get install curl
+echo 'export rvm_prefix="$HOME"' > /root/.rvmrc
+echo 'export rvm_path="$HOME/.rvm"' >> /root/.rvmrc
+gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+curl -L get.rvm.io |rvm_path=/opt/rvm bash -s stable
+rvm use --install --default 2.3.0}
         script.each_line do |l|
-          @machine.communicate.test(l)
+          @machine.communicate.sudo(l)
         end
         puts "Installing Kaigara..."
-        @machine.communicate.test("gem install kaigara")
+        @machine.communicate.sudo("gem install kaigara")
+        puts "Provisioning..."
+        @machine.communicate.sudo("cd /vagrant && kaish sysops exec")
       end
     end
   end
