@@ -5,6 +5,5 @@ group :development do
 end
 
 group :plugins do
-  gem "vagrant-kaigara", path: "."
   gemspec
 end
