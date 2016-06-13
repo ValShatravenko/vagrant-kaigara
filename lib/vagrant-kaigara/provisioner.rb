@@ -1,26 +1,72 @@
 module VagrantPlugins
   module Kaigara
     class Provisioner < Vagrant.plugin(2, :provisioner)
-      def provision
-        puts "Installing RVM..."
-        script = %{
-          apt-get install curl
-          echo 'export rvm_prefix="$HOME"' > /root/.rvmrc
-          echo 'export rvm_path="$HOME/.rvm"' >> /root/.rvmrc
-          gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-          curl -L get.rvm.io |rvm_path=/opt/rvm bash -s stable
-          rvm use --install --default 2.3.0
-        }
+      def initialize(machine, opts)
+        @machine = machine
+      end
 
-        script.each_line do |l|
-          @machine.communicate.sudo(l)
+      def provision
+        if rvm_installed?
+          @machine.ui.info("RVM is already installed")
+        else
+          @machine.ui.info("Installing RVM...")
+
+          install_rvm = %{
+            gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+            curl -L get.rvm.io | sudo bash -s stable
+            rvm use --default --install ruby-2.3
+            gpasswd -a vagrant rvm
+          }
+
+          install_rvm.strip.each_line do |l|
+            @machine.ui.info(l.strip)
+            action(l)
+          end
         end
 
-        puts "Installing Kaigara..."
-        @machine.communicate.sudo("gem install kaigara")
+        if kaigara_installed?
+          @machine.ui.info("Kaigara is already installed")
+        else
+          @machine.ui.info("Installing Kaigara...")
+          action("gem install kaigara")
+        end
 
-        puts "Provisioning..."
-        @machine.communicate.sudo("cd /vagrant && kaish sysops exec")
+        @machine.ui.info("Provisioning...")
+        action("cd /vagrant && kaish sysops exec")
+
+        action("echo 'source /etc/profile' >> /root/.bashrc")
+      end
+
+      # Execute a command at vm
+      def action(command, opts = {})
+        @machine.communicate.tap do |comm|
+          comm.execute(command, { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
+            handle_comm(type, data)
+          end
+        end
+      end
+
+      # Handle the comand output
+      def handle_comm(type, data)
+        if [:stderr, :stdout].include?(type)
+          color = type == :stdout ? :green : :red
+
+          data = data.chomp
+          return if data.empty?
+
+          options = {}
+          options[:color] = color
+
+          @machine.ui.info(data.chomp.strip, options) if data.chomp.length > 1
+        end
+      end
+
+      def rvm_installed?
+        @machine.communicate.test('rvm', sudo: true)
+      end
+
+      def kaigara_installed?
+        @machine.communicate.test('kaish', sudo: true)
       end
     end
   end
