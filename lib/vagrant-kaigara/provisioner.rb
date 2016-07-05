@@ -6,22 +6,11 @@ module VagrantPlugins
       end
 
       def provision
-        if rvm_installed?
-          @machine.ui.info("RVM is already installed")
+        if ruby_installed?
+          @machine.ui.info("Ruby is already installed")
         else
-          @machine.ui.info("Installing RVM...")
-
-          install_rvm = %{
-            gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-            curl -L get.rvm.io | sudo bash -s stable
-            rvm use --default --install ruby-2.3
-            gpasswd -a vagrant rvm
-          }
-
-          install_rvm.strip.each_line do |l|
-            @machine.ui.info(l.strip)
-            action(l)
-          end
+          @machine.ui.info("Installing Ruby...")
+          @machine.ui.info("curl http://mirror.kaigara.org/scripts/kairb.sh | bash /dev/stdin")
         end
 
         if kaigara_installed?
@@ -33,15 +22,15 @@ module VagrantPlugins
 
         @machine.ui.info("Provisioning...")
         action("cd /vagrant && kaish sysops exec")
-
-        action("echo 'source /etc/profile' >> /root/.bashrc")
       end
 
       # Execute a command at vm
       def action(command, opts = {})
         @machine.communicate.tap do |comm|
           comm.execute(command, { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
-            handle_comm(type, data)
+            Thread.new do
+              handle_comm(type, data)
+            end
           end
         end
       end
@@ -57,12 +46,14 @@ module VagrantPlugins
           options = {}
           options[:color] = color
 
-          @machine.ui.info(data.chomp.strip, options) if data.chomp.length > 1
+          Thread.new do
+            @machine.ui.info(data.chomp.strip, options) if data.chomp.length > 1
+          end
         end
       end
 
-      def rvm_installed?
-        @machine.communicate.test('rvm', sudo: true)
+      def ruby_installed?
+        @machine.communicate.test('ruby -v', sudo: true)
       end
 
       def kaigara_installed?
