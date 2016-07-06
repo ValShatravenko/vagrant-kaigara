@@ -10,7 +10,7 @@ module VagrantPlugins
           @machine.ui.info("Ruby is already installed")
         else
           @machine.ui.info("Installing Ruby...")
-          @machine.ui.info("curl http://mirror.kaigara.org/scripts/kairb.sh | bash /dev/stdin")
+          action("curl http://mirror.kaigara.org/scripts/kairb.sh | bash /dev/stdin")
         end
 
         if kaigara_installed?
@@ -27,7 +27,7 @@ module VagrantPlugins
       # Execute a command at vm
       def action(command, opts = {})
         @machine.communicate.tap do |comm|
-          comm.execute(command, { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
+          comm.execute("source /etc/profile; #{command}", { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
             Thread.new do
               handle_comm(type, data)
             end
@@ -53,11 +53,15 @@ module VagrantPlugins
       end
 
       def ruby_installed?
-        @machine.communicate.test('ruby -v', sudo: true)
+        test('test -f /opt/kaigara') && test('ruby -v')
       end
 
       def kaigara_installed?
-        @machine.communicate.test('kaish', sudo: true)
+        test('kaish')
+      end
+
+      def test(t)
+        @machine.communicate.test(t, sudo: true)
       end
     end
   end
