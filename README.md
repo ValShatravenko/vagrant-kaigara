@@ -1,6 +1,6 @@
 # Vagrant::Kaigara
 
-[![Build Status](https://travis-ci.org/helios-technologies/vagrant-kaigara.svg?branch=master)](https://travis-ci.org/helios-technologies/vagrant-kaigara) [![Gem Version](https://badge.fury.io/rb/vagrant-kaigara.svg)](https://badge.fury.io/rb/vagrant-kaigara) 
+[![Build Status](https://travis-ci.org/helios-technologies/vagrant-kaigara.svg?branch=master)](https://travis-ci.org/helios-technologies/vagrant-kaigara) [![Gem Version](https://badge.fury.io/rb/vagrant-kaigara.svg)](https://badge.fury.io/rb/vagrant-kaigara)
 
 This is a gem for provisioning vagrant with [kaigara](https://github.com/helios-technologies/kaigara)
 
@@ -22,6 +22,29 @@ Add this to your Vagrantfile:
 Then run `vagrant provision`.
 
 ## Contributing
+
+If you want to test the plugin in source folder, execute every vargant command starting with bundle exec:
+
+    $ bundle exec vagrant up --provision
+
+If you want to test any changes with your projects:
+
+1) Delete your current vagrant-kaigara plugin
+
+```
+$ vagrant plugin uninstall vagrant-kaigara
+```
+
+2) Build a gem from sources
+
+```
+$ gem build vagrant-kaigara.gemspec
+```
+3) Install new gem
+
+```
+$ vagrant plugin install vagrant-kaigara-{version}.gem
+```
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/helios-technologies/vagrant-kaigara.
 

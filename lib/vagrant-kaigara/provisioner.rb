@@ -28,9 +28,7 @@ module VagrantPlugins
       def action(command, opts = {})
         @machine.communicate.tap do |comm|
           comm.execute("source /etc/profile; #{command}", { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
-            Thread.new do
-              handle_comm(type, data)
-            end
+            handle_comm(type, data)
           end
         end
       end
@@ -53,7 +51,7 @@ module VagrantPlugins
       end
 
       def ruby_installed?
-        test('test -f /opt/kaigara') && test('ruby -v')
+        test('test -d /opt/kaigara') && test('ruby -v')
       end
 
       def kaigara_installed?
