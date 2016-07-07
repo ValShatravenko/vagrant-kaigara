@@ -10,24 +10,28 @@ module VagrantPlugins
           @machine.ui.info("Ruby is already installed")
         else
           @machine.ui.info("Installing Ruby...")
-          action("curl http://mirror.kaigara.org/scripts/kairb.sh | bash /dev/stdin")
+          action("curl -s http://mirror.kaigara.org/scripts/kairb.sh | bash -s")
         end
 
         if kaigara_installed?
           @machine.ui.info("Kaigara is already installed")
         else
           @machine.ui.info("Installing Kaigara...")
-          action("gem install kaigara")
+          action("/opt/kaigara/bin/gem install kaigara")
         end
 
         @machine.ui.info("Provisioning...")
-        action("cd /vagrant && kaish sysops exec")
+        if File.exist?('/vagrant/metadata.rb')
+          action("cd /vagrant && /opt/kaigara/bin/kaish sysops exec")
+        else
+          @machine.ui.info("No operations found")
+        end
       end
 
       # Execute a command at vm
       def action(command, opts = {})
         @machine.communicate.tap do |comm|
-          comm.execute("source /etc/profile; #{command}", { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
+          comm.execute(command, { error_key: :ssh_bad_exit_status_muted, sudo: true }.merge(opts) ) do |type, data|
             handle_comm(type, data)
           end
         end
@@ -44,9 +48,7 @@ module VagrantPlugins
           options = {}
           options[:color] = color
 
-          Thread.new do
-            @machine.ui.info(data.chomp.strip, options) if data.chomp.length > 1
-          end
+          @machine.ui.info(data.chomp.strip, options) if data.chomp.length > 1
         end
       end
 
