@@ -21,7 +21,7 @@ module VagrantPlugins
         end
 
         @machine.ui.info("Provisioning...")
-        if File.exist?('/vagrant/metadata.rb')
+        if test('test -f /vagrant/metadata.rb')
           action("cd /vagrant && /opt/kaigara/bin/kaish sysops exec")
         else
           @machine.ui.info("No operations found")
